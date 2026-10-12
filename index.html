@@ -1,182 +1,432 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BusSaathi | Bus Tracker</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f3f7f4;color:#19352a}
-header{background:#155c40;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:23px;font-weight:bold}
-.tag{font-size:12px;background:#ffffff25;padding:7px 10px;border-radius:20px}
-main{max-width:900px;margin:auto;padding:22px 15px}
-.hero{background:#e0f1e5;border-radius:22px;padding:25px 20px}
-.eyebrow{color:#176544;font-weight:bold;font-size:13px}
-h1{font-size:38px;line-height:1.1;margin:12px 0}
-p{line-height:1.6;color:#64756a}
-button,select{font-size:15px;padding:13px;border-radius:10px;border:0}
-button{background:#176544;color:white;font-weight:bold;cursor:pointer}
-.secondary{background:white;color:#176544;border:1px solid #cdded1}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:18px}
-.card{background:white;border:1px solid #e0e9e2;border-radius:18px;padding:19px}
-h2{font-size:20px;margin:8px 0}
-.icon{font-size:28px}
-.map{height:230px;background:#e5efe3;border-radius:14px;position:relative;overflow:hidden;margin-top:15px;background-image:linear-gradient(35deg,transparent 47%,#c5d8c4 48%,#c5d8c4 51%,transparent 52%),linear-gradient(120deg,transparent 47%,white 48%,white 51%,transparent 52%)}
-.pin{position:absolute;left:48%;top:42%;font-size:30px;background:white;padding:8px;border-radius:14px;box-shadow:0 3px 12px #0002}
-.stop{padding:13px 0;border-bottom:1px solid #e5ebe5}
-.stop:last-child{border:0}
-.stop b{display:block}
-.stop small{color:#78867d}
-.eta{background:#e5f4e9;border-radius:13px;padding:15px;margin:14px 0}
-.eta strong{font-size:29px;color:#176544}
-select{width:100%;border:1px solid #d5e1d7;background:white;margin-top:8px}
-.note{font-size:12px;color:#7b817d}
-#driver{display:none}
-#notice{overflow-wrap:anywhere;font-size:13px}
-footer{text-align:center;padding:22px;color:#758278;font-size:13px}
-@media(max-width:600px){h1{font-size:32px}.grid{grid-template-columns:1fr}.hero{padding:21px 17px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BusSaathi | College Bus Tracker</title>
+
+  <!-- Leaflet map library -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      color: #172033;
+    }
+
+    header {
+      background: #123b70;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 { margin: 0 0 7px; }
+    header p { margin: 0; }
+
+    main {
+      max-width: 950px;
+      margin: auto;
+      padding: 18px;
+    }
+
+    .tabs, .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 17px;
+      background: #1768c4;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button.secondary { background: #526174; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 3px 14px #152b4610;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      background: #eef5ff;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 25px;
+      margin-top: 8px;
+      color: #1459a5;
+    }
+
+    #map {
+      width: 100%;
+      height: 370px;
+      border-radius: 12px;
+      z-index: 1;
+    }
+
+    .stop {
+      padding: 12px 4px;
+      border-bottom: 1px solid #e5eaf0;
+    }
+
+    .stop:last-child { border-bottom: 0; }
+
+    .status {
+      padding: 10px;
+      background: #e9f7ed;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .notice {
+      font-size: 13px;
+      color: #5b6472;
+      line-height: 1.5;
+    }
+
+    .bus-icon {
+      font-size: 27px;
+      text-align: center;
+      line-height: 35px;
+    }
+
+    [hidden] { display: none !important; }
+
+    @media (max-width: 500px) {
+      main { padding: 12px; }
+      #map { height: 310px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stat strong { font-size: 21px; }
+      button { flex: 1; }
+    }
+  </style>
 </head>
+
 <body>
-<header>
-  <div class="logo">🚌 BusSaathi</div>
-  <div class="tag">PROJECT DEMO</div>
-</header>
-<main>
-  <section class="hero">
-    <div class="eyebrow">SMARTER DAILY COMMUTE</div>
-    <h1>Your bus.<br>Your time.</h1>
-    <p>College bus tracking concept to help students check their route and estimated arrival time.</p>
-    <div class="actions">
-      <button onclick="studentMode()">📍 Student Mode</button>
-      <button class="secondary" onclick="driverMode()">🧭 Driver Mode</button>
+  <header>
+    <h1>🚌 BusSaathi</h1>
+    <p>Your Bus. Your Time.</p>
+    <p style="margin-top:8px;font-size:13px">
+      Smart College Bus Tracking Project
+    </p>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button id="studentTab">📍 Student Mode</button>
+      <button id="driverTab" class="secondary">🧭 Driver Mode</button>
     </div>
-  </section>
 
-  <div class="grid">
-    <section class="card" id="student">
-      <div class="icon">📍</div>
-      <h2>Track Your Bus</h2>
-      <p>Choose a route to see its sample stops and arrival estimate.</p>
-      <label for="route">Select bus route</label>
-      <select id="route" onchange="changeRoute()">
-        <option value="village">Village Route</option>
-        <option value="town">Town Route</option>
-      </select>
-      <div class="map">
-        <div class="pin">🚌</div>
+    <section class="card">
+      <h2 id="modeTitle">Track Your College Bus</h2>
+      <div class="stats">
+        <div class="stat">
+          Bus Status
+          <strong id="busStatus">Not started</strong>
+        </div>
+        <div class="stat">
+          Arrival at College
+          <strong id="eta">—</strong>
+        </div>
       </div>
-      <p class="note">Illustrative map — this is not a real geographic map or live bus position.</p>
-      <div class="eta">
-        <div>Estimated arrival at college</div>
-        <strong id="eta">15 minutes</strong>
-        <div class="note" id="etaNote">Sample estimate only</div>
-      </div>
-      <div id="stops">
-        <div class="stop"><b>📌 Village Stop</b><small>Route start · 08:00</small></div>
-        <div class="stop"><b>📌 Main Road</b><small>Pickup point · 08:10</small></div>
-        <div class="stop"><b>🏫 College Gate</b><small>Destination · 08:25</small></div>
-      </div>
-    </section>
 
-    <section class="card" id="driver">
-      <div class="icon">🧭</div>
-      <h2>Driver Mode</h2>
-      <p>Test your phone's GPS permission. This demo does not share location with students.</p>
-      <button id="start" onclick="startGPS()">Start GPS Test</button>
-      <button class="secondary" onclick="stopGPS()">Stop GPS</button>
-      <p id="notice">GPS not started.</p>
-      <p class="note">Real tracking requires a live database, authorised driver access and internet connectivity.</p>
+      <p id="nextStop">Next stop: Waiting to start</p>
+      <p id="lastUpdate">Last update: Not started</p>
     </section>
 
     <section class="card">
-      <div class="icon">⏱️</div>
-      <h2>Arrival Information</h2>
-      <p>See the estimated time for the selected sample route.</p>
-      <p class="note">Real ETA should use route distance and traffic-aware travel time where available.</p>
+      <h3>Live Route Map</h3>
+      <div id="map"></div>
+      <p class="notice">
+        Demonstration mode: the bus marker moves along a sample route.
+        It does not represent a real bus location.
+      </p>
     </section>
+
     <section class="card">
-      <div class="icon">🔒</div>
-      <h2>Privacy First</h2>
-      <p>Live bus location should only be shared with driver consent and suitable database access controls.</p>
+      <h3>Bus Route and Stops</h3>
+      <div id="stopList"></div>
     </section>
-  </div>
-</main>
-<footer>BusSaathi · Student Project Prototype · Live tracking not connected</footer>
 
-<script>
-const routeData={
-  village:{
-    eta:15,
-    stops:[
-      ["Village Stop","Route start · 08:00"],
-      ["Main Road","Pickup point · 08:10"],
-      ["College Gate","Destination · 08:25"]
-    ]
-  },
-  town:{
-    eta:9,
-    stops:[
-      ["Town Bus Stand","Route start · 08:12"],
-      ["Market Crossing","Pickup point · 08:18"],
-      ["College Gate","Destination · 08:27"]
-    ]
-  }
-};
+    <section class="card" id="driverPanel" hidden>
+      <h3>Driver Control Panel</h3>
+      <div class="status">
+        Use these controls to demonstrate simulated bus movement.
+      </div>
+      <div class="controls">
+        <button id="startBtn">▶ Start Bus</button>
+        <button id="pauseBtn" class="secondary">⏸ Pause</button>
+        <button id="resetBtn" class="secondary">↺ Reset</button>
+      </div>
+      <p id="driverMessage">Simulation is ready.</p>
+    </section>
 
-function changeRoute(){
-  const data=routeData[document.getElementById("route").value];
-  document.getElementById("eta").textContent=data.eta+" minutes";
-  document.getElementById("stops").innerHTML=data.stops.map(s=>
-    '<div class="stop"><b>📌 '+s[0]+'</b><small>'+s[1]+'</small></div>'
-  ).join("");
-}
-function studentMode(){
-  document.getElementById("student").scrollIntoView({behavior:"smooth"});
-}
-function driverMode(){
-  document.getElementById("driver").style.display="block";
-  document.getElementById("driver").scrollIntoView({behavior:"smooth"});
-}
-let watchId=null;
-function startGPS(){
-  const notice=document.getElementById("notice");
-  if(!navigator.geolocation){
-    notice.textContent="Your browser does not support GPS location.";
-    return;
-  }
-  if(location.protocol!=="https:"&&location.hostname!=="localhost"){
-    notice.textContent="GPS needs a secure HTTPS website. Deploy this page first.";
-    return;
-  }
-  if(watchId!==null)return;
-  notice.textContent="Requesting location permission...";
-  watchId=navigator.geolocation.watchPosition(
-    p=>{
-      notice.textContent=
-        "GPS test successful! Latitude: "+p.coords.latitude.toFixed(5)+
-        ", Longitude: "+p.coords.longitude.toFixed(5)+
-        ". Accuracy: about "+Math.round(p.coords.accuracy)+" metres. Not shared.";
-    },
-    e=>{
-      const errors={
-        1:"Location permission denied. Allow it in browser settings.",
-        2:"Location unavailable. Check phone GPS settings.",
-        3:"Location request timed out. Try again."
-      };
-      notice.textContent=errors[e.code]||"Could not get GPS location.";
-      watchId=null;
-    },
-    {enableHighAccuracy:true,maximumAge:5000,timeout:15000}
-  );
-}
-function stopGPS(){
-  if(watchId!==null)navigator.geolocation.clearWatch(watchId);
-  watchId=null;
-  document.getElementById("notice").textContent="GPS test stopped. Location is not being shared.";
-}
-</script>
+    <section class="card">
+      <h3>About This Project</h3>
+      <p>
+        BusSaathi is a student project designed to help college
+        students understand bus locations, route stops and estimated
+        arrival times.
+      </p>
+      <p class="notice">
+        This prototype simulates location in your browser. Each device
+        runs its own simulation; locations are not shared between
+        phones. Real tracking requires a connected backend and
+        authorised location sharing.
+      </p>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // SAMPLE ROUTE COORDINATES.
+    // Replace these with coordinates for your college route.
+    const stops = [
+      { name: "Village Stop", lat: 25.3176, lng: 82.9739 },
+      { name: "Main Road", lat: 25.3210, lng: 82.9800 },
+      { name: "Library Junction", lat: 25.3240, lng: 82.9870 },
+      { name: "College Gate", lat: 25.3290, lng: 82.9910 }
+    ];
+
+    const SIMULATION_SECONDS = 180;
+    let progress = 0;
+    let timer = null;
+    let mode = "student";
+
+    const map = L.map("map").setView(
+      [stops[0].lat, stops[0].lng], 14
+    );
+
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        attribution: "&copy; OpenStreetMap contributors",
+        maxZoom: 19
+      }
+    ).addTo(map);
+
+    const routePoints = stops.map(stop => [stop.lat, stop.lng]);
+
+    const routeLine = L.polyline(routePoints, {
+      color: "#1768c4",
+      weight: 5,
+      opacity: 0.8
+    }).addTo(map);
+
+    map.fitBounds(routeLine.getBounds(), { padding: [25, 25] });
+
+    stops.forEach((stop, index) => {
+      L.marker([stop.lat, stop.lng])
+        .addTo(map)
+        .bindPopup((index + 1) + ". " + stop.name);
+    });
+
+    const busIcon = L.divIcon({
+      className: "",
+      html: '<div class="bus-icon">🚌</div>',
+      iconSize: [38, 38],
+      iconAnchor: [19, 19]
+    });
+
+    const busMarker = L.marker(routePoints[0], {
+      icon: busIcon
+    }).addTo(map);
+
+    const stopList = document.getElementById("stopList");
+
+    stops.forEach((stop, index) => {
+      const item = document.createElement("div");
+      item.className = "stop";
+      item.textContent =
+        (index === 0 ? "🟢 " : "📍 ") +
+        (index + 1) + ". " + stop.name;
+      stopList.appendChild(item);
+    });
+
+    // Calculate the distance of each route segment.
+    const segmentLengths = [];
+    let totalDistance = 0;
+
+    for (let i = 0; i < stops.length - 1; i++) {
+      const a = L.latLng(stops[i].lat, stops[i].lng);
+      const b = L.latLng(stops[i + 1].lat, stops[i + 1].lng);
+      const distance = a.distanceTo(b);
+
+      segmentLengths.push(distance);
+      totalDistance += distance;
+    }
+
+    function getBusPosition(value) {
+      let remaining = value * totalDistance;
+
+      for (let i = 0; i < segmentLengths.length; i++) {
+        if (remaining <= segmentLengths[i] || i === segmentLengths.length - 1) {
+          const fraction = Math.min(
+            1, remaining / segmentLengths[i]
+          );
+
+          return [
+            stops[i].lat +
+              (stops[i + 1].lat - stops[i].lat) * fraction,
+            stops[i].lng +
+              (stops[i + 1].lng - stops[i].lng) * fraction
+          ];
+        }
+
+        remaining -= segmentLengths[i];
+      }
+
+      return routePoints[routePoints.length - 1];
+    }
+
+    function updateDisplay() {
+      const position = getBusPosition(progress);
+      busMarker.setLatLng(position);
+
+      const arrived = progress >= 1;
+      const elapsed = progress * SIMULATION_SECONDS;
+
+      let nextIndex = Math.min(
+        stops.length - 1,
+        Math.floor(progress * (stops.length - 1)) + 1
+      );
+
+      if (arrived) nextIndex = stops.length - 1;
+
+      document.getElementById("busStatus").textContent =
+        arrived ? "Arrived" : timer ? "Moving" : progress > 0
+          ? "Paused" : "Ready";
+
+      document.getElementById("eta").textContent =
+        arrived ? "Arrived" :
+        Math.ceil((SIMULATION_SECONDS - elapsed) / 60) + " min";
+
+      document.getElementById("nextStop").textContent =
+        arrived ? "Next stop: Destination reached" :
+        "Next stop: " + stops[nextIndex].name;
+
+      document.getElementById("lastUpdate").textContent =
+        "Last update: " + new Date().toLocaleTimeString();
+
+      document.getElementById("driverMessage").textContent =
+        arrived ? "The bus has reached the college." :
+        timer ? "Bus simulation is running." :
+        progress > 0 ? "Bus simulation is paused." :
+        "Simulation is ready.";
+
+      document.getElementById("startBtn").disabled =
+        !!timer || arrived;
+
+      document.getElementById("pauseBtn").disabled = !timer;
+    }
+
+    function stopTimer() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function startBus() {
+      if (timer || progress >= 1) return;
+
+      timer = setInterval(() => {
+        progress = Math.min(
+          1, progress + 1 / SIMULATION_SECONDS
+        );
+
+        updateDisplay();
+
+        if (progress >= 1) stopTimer();
+      }, 1000);
+
+      updateDisplay();
+    }
+
+    function pauseBus() {
+      stopTimer();
+      updateDisplay();
+    }
+
+    function resetBus() {
+      stopTimer();
+      progress = 0;
+      updateDisplay();
+      busMarker.setLatLng(routePoints[0]);
+      map.panTo(routePoints[0]);
+    }
+
+    function setMode(selectedMode) {
+      mode = selectedMode;
+
+      document.getElementById("driverPanel").hidden =
+        mode !== "driver";
+
+      document.getElementById("modeTitle").textContent =
+        mode === "student"
+          ? "Track Your College Bus"
+          : "Driver Control Panel";
+
+      document.getElementById("studentTab").className =
+        mode === "student" ? "" : "secondary";
+
+      document.getElementById("driverTab").className =
+        mode === "driver" ? "" : "secondary";
+
+      // Recalculate the map size after changing views.
+      setTimeout(() => map.invalidateSize(), 100);
+    }
+
+    document.getElementById("studentTab").addEventListener(
+      "click", () => setMode("student")
+    );
+
+    document.getElementById("driverTab").addEventListener(
+      "click", () => setMode("driver")
+    );
+
+    document.getElementById("startBtn").addEventListener(
+      "click", startBus
+    );
+
+    document.getElementById("pauseBtn").addEventListener(
+      "click", pauseBus
+    );
+
+    document.getElementById("resetBtn").addEventListener(
+      "click", resetBus
+    );
+
+    updateDisplay();
+  </script>
 </body>
 </html>
